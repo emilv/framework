@@ -520,6 +520,47 @@ if (! function_exists('info')) {
     }
 }
 
+if (! function_exists('loaded_relations')) {
+    /**
+     * Get a list of all relations that have been loaded on a model or
+     * a collection of models, including relations on any child
+     * models.
+     *
+     * @param  \Illuminate\Database\Eloquent\Model|\Illuminate\Support\Collection  $model_or_collection
+     * @return array
+     */
+    function loaded_relations($model_or_collection) : array
+    {
+
+        if ($model_or_collection instanceof \Illuminate\Support\Collection) {
+            $result = [];
+            foreach ($model_or_collection as $model) {
+                $deeper = loaded_relations($model);
+                foreach ($deeper as $d) {
+                    $result[$d] = true;
+                }
+            }
+            return array_keys($result);
+        }
+
+        if ($model_or_collection instanceof \Illuminate\Database\Eloquent\Model) {
+            $relations = $model_or_collection->getRelations();
+            $result = [];
+            foreach ($relations as $prefix => $related) {
+                $result[$prefix] = true;
+                $deeper = loaded_relations($related);
+                foreach ($deeper as $d) {
+                    $key = $prefix.'.'.$d;
+                    $result[$key] = true;
+                }
+            }
+            return array_keys($result);
+        }
+
+        return [];
+    }
+}
+
 if (! function_exists('logger')) {
     /**
      * Log a debug message to the logs.
